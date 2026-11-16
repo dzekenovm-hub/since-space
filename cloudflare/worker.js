@@ -10,7 +10,7 @@ const digest = async value => [...new Uint8Array(await crypto.subtle.digest('SHA
 const token = () => [...crypto.getRandomValues(new Uint8Array(32))].map(x => x.toString(16).padStart(2, '0')).join('');
 const b64 = bytes => btoa(String.fromCharCode(...bytes));
 const unb64 = text => Uint8Array.from(atob(text), x => x.charCodeAt(0));
-async function passwordHash(password, salt = crypto.getRandomValues(new Uint8Array(16))) { const key = await crypto.subtle.importKey('raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits']); const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt, iterations: 210000, hash: 'SHA-256' }, key, 256); return { salt: b64(salt), hash: b64(new Uint8Array(bits)) }; }
+async function passwordHash(password, salt = crypto.getRandomValues(new Uint8Array(16))) { const key = await crypto.subtle.importKey('raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits']); const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' }, key, 256); return { salt: b64(salt), hash: b64(new Uint8Array(bits)) }; }
 async function passwordMatches(password, row) { const value = await passwordHash(password, unb64(row.password_salt)); return value.hash === row.password_hash; }
 const parse = async request => { try { return await request.json(); } catch { throw new Error('Проверь введённые данные.'); } };
 const level = xp => xp >= 2000 ? 'Master' : xp >= 1000 ? 'Scientist' : xp >= 450 ? 'Researcher' : xp >= 150 ? 'Student' : 'Beginner';
