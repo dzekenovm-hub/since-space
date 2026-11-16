@@ -38,32 +38,29 @@
 
 ## Хранение и публикация
 
-Аккаунты, Element Quest, серверный XP, миссии, курируемые вопросы и аккаунтный инвентарь сохраняются в JSON-файле данных (по умолчанию `.since-space-data.json`, этот файл исключён из Git). Пароль владельца обязательно задай в переменной `SS_ADMIN_PASSWORD`. Для постоянного хранилища задай `SS_DATA_PATH` абсолютным путём.
-
-Капсулы времени и часть старого интерфейса по-прежнему используют `localStorage`, а химические эксперименты и черновой инвентарь — IndexedDB браузера. Для небольшого запуска в одном Node-процессе пригодится постоянный диск хостинга. При росте аудитории перенеси JSON-данные и аккаунтный инвентарь в серверную базу данных; сейчас это не PostgreSQL.
+Для публичной версии используется **Cloudflare Workers + D1**. D1 хранит аккаунты, хеши паролей, сессии, Element Quest, инвентарь, стену и данные админки — они не исчезнут после перезапуска. Файлы интерфейса находятся в `public/`, Worker и API — в `cloudflare/worker.js`.
 
 ### Публикация в интернете
 
-1. Создай репозиторий GitHub и загрузи в него папку проекта. Не загружай `.since-space-data.json`, `.env` или реальные пароли/ключи.
-2. На Render создай **Web Service** и подключи репозиторий. Runtime — Node; Start Command — `npm start` (или `node serve.mjs`). Сервер читает переменную `PORT`, которую задаёт хостинг.
-3. В настройках сервиса добавь постоянный диск, например с точкой подключения `/var/data`, и переменную `SS_DATA_PATH=/var/data/since-space.json`. Без диска изменения JSON-файла могут исчезнуть после перезапуска или публикации.
-4. В Environment добавь `SS_ADMIN_PASSWORD` со своим длинным уникальным секретом. Вставь его только в панель хостинга; не коммить и не отправляй его в чаты.
-5. Установи `NODE_ENV=production`, запусти публикацию и проверь публичный URL: создай тестовый аккаунт, выйди и войди снова; затем проверь вход автора.
+Нужны Node.js 20+ и аккаунт Cloudflare. Банковская карта для бесплатного плана не требуется.
 
-Render по умолчанию использует эфемерную файловую систему; постоянный диск поддерживается на платных Web Services, а бесплатные сервисы не поддерживают диски и могут выключаться при простое. Данные этого проекта в текущей реализации требуют одного экземпляра Node и постоянного диска либо переноса на БД. [Официальное руководство Render по постоянным дискам](https://render.com/docs/disks), [переменным и секретам](https://render.com/docs/configure-environment-variables), [Node Web Services](https://render.com/docs/web-services).
-
-Three.js загружается с CDN по зафиксированной версии; для 3D-лаборатории нужен доступ браузера к `cdn.jsdelivr.net`. `MeshPhysicalMaterial` моделирует передачу света через стекло, а `OrbitControls` даёт вращение и масштабирование модели согласно [документации Three.js по материалу](https://threejs.org/docs/pages/MeshPhysicalMaterial.html) и [управлению камерой](https://threejs.org/docs/pages/OrbitControls.html).
-
-Чтобы подключить Supabase, создай проект и добавь в `.env.local` (не публикуй файл с секретами):
-
-```env
-VITE_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
-VITE_SUPABASE_ANON_KEY=YOUR_PUBLIC_ANON_KEY
+```powershell
+npm install
+npx wrangler login
+npx wrangler d1 create since-space-db
 ```
 
-Ключи не включены и не выдуманы. Supabase сейчас не подключён и эти переменные не читаются приложением. Секретный `service_role` ключ нельзя помещать во frontend.
+Скопируй `database_id`, который вернёт последняя команда, в `wrangler.toml` вместо `REPLACE_WITH_D1_DATABASE_ID`. Затем выполни:
 
-Химический инвентарь работает без внешних ключей и хранится локально в браузере. Для доступа к нему с разных устройств понадобится подключить серверное хранилище и авторизацию.
+```powershell
+npx wrangler d1 execute since-space-db --remote --file=cloudflare/schema.sql
+npx wrangler secret put ADMIN_PASSWORD
+npx wrangler deploy
+```
+
+Когда `wrangler secret put ADMIN_PASSWORD` попросит значение, введи длинный уникальный пароль автора. Он не попадёт в GitHub, исходный код или браузер. После `deploy` команда покажет публичный адрес `*.workers.dev`. Проверь на нём регистрацию, повторный вход и «Вход автора».
+
+Cloudflare D1 и Worker API описаны в [официальной документации D1](https://developers.cloudflare.com/d1/) и [документации статических файлов Workers](https://developers.cloudflare.com/workers/static-assets/binding/).
 
 ## Проверка
 

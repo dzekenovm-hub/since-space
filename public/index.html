@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#07101d" />
+    <meta name="description" content="SINCE SPACE — интерактивная лаборатория, таблица элементов, архив времени и научные миссии." />
+    <title>SINCE SPACE — пространство науки</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="enhancements.css" />
+    <link rel="stylesheet" href="chemistry.css" />
+    <link rel="stylesheet" href="lab-physics.css" />
+    <link rel="stylesheet" href="chem-workflow.css" />
+    <link rel="stylesheet" href="space-features.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" id="sidebar">
+        <a class="brand" href="#home" aria-label="SINCE SPACE — главная"><span class="brand-mark">✳</span><span>SINCE<span class="brand-light">SPACE</span><small>SCIENCE, MADE HUMAN</small></span></a>
+        <div class="nav-label">ИССЛЕДОВАТЬ</div>
+        <nav class="main-nav" aria-label="Основная навигация">
+          <button class="nav-item active" data-page="home"><span>⌂</span> Обзор <kbd>01</kbd></button>
+          <button class="nav-item" data-page="elements"><span>▦</span> Элементы <kbd>02</kbd></button>
+          <button class="nav-item" data-page="lab"><span>⚗</span> CHEM LAB <kbd>03</kbd></button>
+          <button class="nav-item" data-page="capsule"><span>◷</span> Капсула времени <kbd>04</kbd></button>
+          <button class="nav-item" data-page="wall"><span>◉</span> Стена сообщений <kbd>05</kbd></button>
+          <button class="nav-item" data-page="missions"><span>⌁</span> Миссии <kbd>06</kbd></button>
+          <button class="nav-item" data-page="quests"><span>✧</span> ELEMENT QUEST <kbd>07</kbd></button>
+          <button class="nav-item" data-page="users"><span>◎</span> Ученики <kbd>08</kbd></button>
+        </nav>
+        <div class="sidebar-bottom"><div class="live-card"><span class="live-dot"></span><span>ВСЕЛЕННАЯ НА СВЯЗИ</span><small>Обновлено только что</small></div><button class="nav-item admin-nav" data-page="admin"><span>⚿</span> Панель автора</button><button class="nav-item account-nav" data-page="account"><span>◉</span> <span id="accountNavLabel">Войти / создать аккаунт</span></button><div class="profile" id="sidebarProfile"><div class="avatar">S</div><div><b>Исследователь</b><small>Гостевой режим</small></div><span class="profile-menu">···</span></div></div>
+      </aside>
+      <main class="main-content">
+        <header class="topbar"><button class="mobile-menu" id="menuToggle" aria-label="Открыть меню">☰</button><div class="breadcrumb"><span>ПРОСТРАНСТВО НАУКИ</span><span class="crumb-sep">/</span><b id="crumbCurrent">ОБЗОР</b></div><div class="topbar-right"><button class="button account-shortcut" data-page="account">Войти / аккаунт</button><div class="top-avatar" id="topAvatar">S</div></div></header>
+        <div id="view" class="view"></div>
+        <footer class="footer"><span>© 2025 SINCE SPACE</span><span>СДЕЛАНО ДЛЯ ТЕХ, КОМУ ИНТЕРЕСНО <b>✳</b></span><span>НАУКА — ЭТО ПРИКЛЮЧЕНИЕ</span></footer>
+      </main>
+    </div>
+    <div id="modalRoot"></div>
+    <div id="toastRoot" class="toast-root" aria-live="polite"></div>
+    <script src="chemistry-core.js"></script>
+    <script src="app.js"></script>
+    <script src="lab-enhancements.js"></script>
+    <script src="reaction-library.js"></script>
+    <script src="chem-modes.js"></script>
+    <script src="user-space.js"></script>
+  </body>
+</html>
