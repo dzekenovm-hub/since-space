@@ -69,4 +69,8 @@
     state.plannerCursor=dateButton.dataset.plannerDay;
     renderStudyPlanner();
   },true);
+  document.addEventListener('click',event=>{
+    const insideSheet=event.target.closest('.planner-modal');
+    if(insideSheet&&!event.target.closest('[data-planner-close]')&&!event.target.closest('[data-planner-delete]'))event.stopImmediatePropagation();
+  },true);
 })();
