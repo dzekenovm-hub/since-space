@@ -44,4 +44,29 @@
     };
     if(state.page==='home') globalThis.renderHome();
   }
+
+  function iosAgenda(key){
+    const events=eventsForDate(key),date=dayFromKey(key);
+    return `<section class="planner-ios-agenda"><header class="planner-ios-agenda-head"><div><span class="eyebrow">ВЫБРАННЫЙ ДЕНЬ</span><h3>${date.toLocaleDateString('ru-RU',{weekday:'long',day:'numeric',month:'long'})}</h3></div><button class="button primary" data-planner-add>+ Добавить</button></header>${events.length?events.map(event=>`<article class="planner-ios-event ${event.complete?'complete':''}" style="--event-color:${palette[event.color]||palette.mint}"><i class="planner-event-accent"></i><button class="planner-ios-event-main" data-planner-event="${escPlanner(event.id)}"><b>${escPlanner(event.title)}</b><span>${new Date(event.startsAt).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})} · ${typeNames[event.type]}${event.reminderMinutes!==null?' · ◌':''}</span></button><button class="planner-check" data-planner-complete="${escPlanner(event.id)}" aria-label="Отметить выполнение">${event.complete?'✓':''}</button></article>`).join(''):`<div class="planner-empty-agenda"><b>Этот день свободен</b><span>Нажми «Добавить» и запланируй занятие.</span></div>`}</section>`;
+  }
+  function iosMonth(){
+    const selected=dayFromKey(state.plannerCursor),monthStart=new Date(selected.getFullYear(),selected.getMonth(),1,12),first=startWeek(monthStart),days=rangeDays(first,42),currentMonth=selected.getMonth(),today=nowKey();
+    return `<div class="planner-ios-month"><div class="planner-ios-weekdays">${['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map(day=>`<span>${day}</span>`).join('')}</div><div class="planner-ios-days">${days.map(date=>{const key=dateKey(date),events=eventsForDate(key);return `<button class="planner-ios-date ${date.getMonth()===currentMonth?'':'other-month'} ${key===state.plannerCursor?'selected':''} ${key===today?'today':''}" data-planner-day="${key}"><b>${date.getDate()}</b><span class="planner-ios-dots">${events.slice(0,3).map(event=>`<i style="--dot:${palette[event.color]||palette.mint}"></i>`).join('')}</span></button>`}).join('')}</div>${iosAgenda(state.plannerCursor)}</div>`;
+  }
+  function renderStudyPlanner(){
+    ensureState();
+    if(!state.user){view.innerHTML=`${plannerHeading()}<section class="panel planner-login"><div class="planner-login-icon">▤</div><h2>План учёбы сохраняется в аккаунте</h2><p>Войди или зарегистрируйся — тогда события, задачи и дедлайны останутся с тобой на любом устройстве.</p><button class="button primary" data-page="account">Войти в аккаунт →</button></section>`;return;}
+    const selected=dayFromKey(state.plannerCursor),title=state.plannerView==='month'?selected.toLocaleDateString('ru-RU',{month:'long',year:'numeric'}):state.plannerView==='week'?`${startWeek(selected).toLocaleDateString('ru-RU',{day:'numeric',month:'short'})} — ${new Date(startWeek(selected).getTime()+6*DAY).toLocaleDateString('ru-RU',{day:'numeric',month:'short',year:'numeric'})}`:selected.toLocaleDateString('ru-RU',{weekday:'long',day:'numeric',month:'long'}),calendar=state.plannerView==='month'?iosMonth():state.plannerView==='week'?weekGrid():iosAgenda(state.plannerCursor);
+    view.innerHTML=`${plannerHeading()}<section class="planner-shell"><div class="planner-workspace"><header class="planner-toolbar panel"><div class="planner-view-toggle">${[['month','Месяц'],['week','Неделя'],['day','День']].map(([mode,label])=>`<button class="${state.plannerView===mode?'active':''}" data-planner-view="${mode}">${label}</button>`).join('')}</div><div class="planner-navigation"><button class="icon-button" data-planner-nav="prev" aria-label="Предыдущий период">‹</button><button class="button" data-planner-today>Сегодня</button><button class="icon-button" data-planner-nav="next" aria-label="Следующий период">›</button><b>${title}</b></div><button class="button primary" data-planner-add>+ Добавить</button></header><section class="planner-calendar panel">${state.plannerLoading?'<div class="planner-loading">Синхронизируем твой календарь…</div>':calendar}</section></div>${progressCard()}</section>`;
+    if(state.plannerLoadedFor!==state.user.id&&!state.plannerLoading)loadEvents();
+    scheduleReminders();
+  }
+  globalThis.renderStudyPlanner=renderStudyPlanner;
+  document.addEventListener('click',event=>{
+    const dateButton=event.target.closest('[data-planner-day]');
+    if(!dateButton||event.target.closest('[data-planner-event]'))return;
+    event.stopImmediatePropagation();
+    state.plannerCursor=dateButton.dataset.plannerDay;
+    renderStudyPlanner();
+  },true);
 })();
