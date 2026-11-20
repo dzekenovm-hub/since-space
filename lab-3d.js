@@ -1,30 +1,12 @@
+/* WebGL flask: a real revolved 3D mesh; CSS/SVG remains as fallback. */
 (() => {
-  const mountStage = stage => {
-    if (!stage || stage.dataset.lab3dMounted) return;
-    stage.dataset.lab3dMounted = 'true';
-    stage.classList.add('lab3d-stage');
-    stage.setAttribute('aria-label', 'Интерактивная 3D-сцена колбы. Потяни мышью или пальцем, чтобы изменить ракурс.');
-    stage.insertAdjacentHTML('afterbegin', `<div class="lab3d-room" aria-hidden="true"><i class="lab3d-grid"></i><i class="lab3d-monitor left"></i><i class="lab3d-monitor right"></i><i class="lab3d-light key"></i><i class="lab3d-light rim"></i><i class="lab3d-bench-surface"></i></div><div class="lab3d-orbit-hint" aria-hidden="true"><span>↔</span> ПОТЯНИ ДЛЯ ОБЗОРА</div>`);
-    let dragging = false, startX = 0, startY = 0, rotateX = 0, rotateY = 0;
-    const setRotation = () => {
-      stage.style.setProperty('--scene-x', `${rotateX}deg`);
-      stage.style.setProperty('--scene-y', `${rotateY}deg`);
-    };
-    const point = event => event.touches ? event.touches[0] : event;
-    const start = event => { const p = point(event); dragging = true; startX = p.clientX; startY = p.clientY; stage.classList.add('is-orbiting'); };
-    const move = event => { if (!dragging) return; const p = point(event); rotateY = Math.max(-12, Math.min(12, (p.clientX - startX) / 12)); rotateX = Math.max(-7, Math.min(7, -(p.clientY - startY) / 15)); setRotation(); };
-    const stop = () => { if (!dragging) return; dragging = false; stage.classList.remove('is-orbiting'); };
-    stage.addEventListener('pointerdown', start);
-    stage.addEventListener('pointermove', move);
-    stage.addEventListener('pointerup', stop);
-    stage.addEventListener('pointercancel', stop);
-    stage.addEventListener('pointerleave', stop);
-    stage.addEventListener('touchstart', start, { passive:true });
-    stage.addEventListener('touchmove', move, { passive:true });
-    stage.addEventListener('touchend', stop, { passive:true });
-    setRotation();
-  };
-  const mountAll = () => document.querySelectorAll('.flask-stage').forEach(mountStage);
-  new MutationObserver(mountAll).observe(document.getElementById('view'), { childList:true, subtree:true });
-  mountAll();
+  const color=value=>{const x=String(value||'').match(/#([\da-f]{6})/i);return x?[1,3,5].map(i=>parseInt(x[1].slice(i,i+2),16)/255):[.32,.78,.84]};
+  const profile=[[.02,.38],[.10,.60],[.24,.76],[.55,.80],[.78,.71],[1.04,.48],[1.25,.30],[1.48,.245],[2.14,.245]],mesh=(cut=9)=>{const v=[],n=[],i=[],s=40,p=profile.slice(0,cut);for(let y=0;y<p.length;y++)for(let x=0;x<=s;x++){const a=x/s*Math.PI*2,r=p[y][1];v.push(Math.cos(a)*r,p[y][0]-1.08,Math.sin(a)*r);n.push(Math.cos(a),.18,Math.sin(a))}for(let y=0;y<p.length-1;y++)for(let x=0;x<s;x++){const a=y*(s+1)+x,b=a+s+1;i.push(a,b,a+1,a+1,b,b+1)}return{v:new Float32Array(v),n:new Float32Array(n),i:new Uint16Array(i)}};
+  const vs=`attribute vec3 p,n;uniform float y,x;varying float l,z;void main(){float c=cos(y),s=sin(y),q=cos(x),w=sin(x);vec3 a=vec3(c*p.x+s*p.z,p.y,-s*p.x+c*p.z);a=vec3(a.x,q*a.y-w*a.z,w*a.y+q*a.z);l=.28+max(0.,dot(normalize(a),normalize(vec3(-.5,.8,.7))))*.72;z=a.z;gl_Position=vec4(a.x*.72,a.y*.72-.03,0.,1.+a.z*.22);}`;
+  const fs=`precision mediump float;uniform vec3 c;uniform float a,h,f;varying float l,z;void main(){vec3 k=mix(c,vec3(1.,.2,.06),h*.28)+f*vec3(.26);gl_FragColor=vec4(k*(l+.12*(1.-abs(z))),a);}`;
+  const sh=(g,t,s)=>{const q=g.createShader(t);g.shaderSource(q,s);g.compileShader(q);return q};
+  function mount(stage){if(stage.dataset.webgl)return;stage.dataset.webgl='1';const cv=document.createElement('canvas');cv.className='flask-webgl';stage.append(cv);const g=cv.getContext('webgl',{alpha:true,antialias:true});if(!g){cv.remove();return}const p=g.createProgram();g.attachShader(p,sh(g,g.VERTEX_SHADER,vs));g.attachShader(p,sh(g,g.FRAGMENT_SHADER,fs));g.linkProgram(p);if(!g.getProgramParameter(p,g.LINK_STATUS)){cv.remove();return}const A={p:g.getAttribLocation(p,'p'),n:g.getAttribLocation(p,'n')},U=Object.fromEntries(['y','x','c','a','h','f'].map(k=>[k,g.getUniformLocation(p,k)])),up=m=>{const q={len:m.i.length};for(const k of ['p','n','i']){q[k]=g.createBuffer();g.bindBuffer(k==='i'?g.ELEMENT_ARRAY_BUFFER:g.ARRAY_BUFFER,q[k]);g.bufferData(k==='i'?g.ELEMENT_ARRAY_BUFFER:g.ARRAY_BUFFER,m[k==='p'?'v':k],g.STATIC_DRAW)}return q},glass=up(mesh()),liquid=up(mesh(5));let yaw=.36,pitch=-.12,down=false,sx=0,sy=0;const pt=e=>e.touches?e.touches[0]:e,start=e=>{const q=pt(e);down=true;sx=q.clientX;sy=q.clientY;stage.classList.add('is-orbiting')},move=e=>{if(!down)return;const q=pt(e);yaw+=(q.clientX-sx)*.012;pitch=Math.max(-.65,Math.min(.5,pitch+(q.clientY-sy)*.009));sx=q.clientX;sy=q.clientY},end=()=>{down=false;stage.classList.remove('is-orbiting')};['pointerdown','pointermove','pointerup','pointerleave','pointercancel'].forEach(k=>cv.addEventListener(k,k==='pointerdown'?start:k==='pointermove'?move:end));
+    const draw=(m,c,a,h=0,f=0)=>{g.bindBuffer(g.ARRAY_BUFFER,m.p);g.vertexAttribPointer(A.p,3,g.FLOAT,false,0,0);g.enableVertexAttribArray(A.p);g.bindBuffer(g.ARRAY_BUFFER,m.n);g.vertexAttribPointer(A.n,3,g.FLOAT,false,0,0);g.enableVertexAttribArray(A.n);g.bindBuffer(g.ELEMENT_ARRAY_BUFFER,m.i);g.uniform1f(U.y,yaw);g.uniform1f(U.x,pitch);g.uniform3fv(U.c,c);g.uniform1f(U.a,a);g.uniform1f(U.h,h);g.uniform1f(U.f,f);g.drawElements(g.TRIANGLES,m.len,g.UNSIGNED_SHORT,0)};
+    const render=()=>{const r=cv.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2),w=Math.max(2,r.width*d|0),h=Math.max(2,r.height*d|0);if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h;g.viewport(0,0,w,h)}const effect=stage.dataset.effect||'',name=stage.dataset.profile||'',run=stage.classList.contains('is-running'),hot=run&&(effect==='heat'||effect==='light'||/oxide|thermite|hydrogen|sodium|potassium/.test(name))?1:0,foam=run&&/foam/.test(name)?1:0;g.clearColor(0,0,0,0);g.clear(g.COLOR_BUFFER_BIT|g.DEPTH_BUFFER_BIT);g.enable(g.BLEND);g.blendFunc(g.SRC_ALPHA,g.ONE_MINUS_SRC_ALPHA);g.enable(g.DEPTH_TEST);draw(liquid,color(getComputedStyle(stage).getPropertyValue('--liquid')),run?.90:.58,hot,foam);g.depthMask(false);draw(glass,[.68,.93,1],.20,hot);g.depthMask(true);requestAnimationFrame(render)};requestAnimationFrame(render);stage.classList.add('has-webgl')}
+  const all=()=>document.querySelectorAll('.flask-stage').forEach(mount);new MutationObserver(all).observe(document.getElementById('view'),{childList:true,subtree:true});all();
 })();
